@@ -57,9 +57,10 @@ class Human < Player
       prompt "Please select from the following:"
       display_options
       choice = gets.chomp
-      break if validate_option choice
+      break if get_valid_option choice
       puts "Sorry, invalid choice"
     end
+    convert_to_valid(choice)
     self.move = Move.new(choice)
   end
 
@@ -75,13 +76,17 @@ class Human < Player
     end
   end
 
-  def validate_option(choice)
+  def get_valid_option(choice)
     Move::OPTIONS.each do |name, info|
       if [name, info[:shortened], info[:num]].include? choice.downcase
-        return choice.replace(name)
+        return name
       end
     end
-    false
+    nil
+  end
+
+  def convert_to_valid(choice)
+    choice.replace(get_valid_option(choice))
   end
 end
 
@@ -99,7 +104,7 @@ class Computer < Player
 end
 
 class RPSGame
-  attr_accessor :human, :computer, :round_num, :move_history
+  BANNER_WIDTH = 27
 
   include Displayable
 
@@ -110,35 +115,81 @@ class RPSGame
     @move_history = []
   end
 
+  def play
+    display_welcome_message
+    loop do
+      play_moves
+      display_banner
+      break unless play_again? && !grand_winner?
+    end
+    display_goodbye_message
+  end
+
+  private
+
+  attr_accessor :human, :computer, :round_num, :move_history
+
+  def play_moves
+    human.choose
+    computer.choose
+    record_moves
+    self.round_num += 1
+  end
+
+  def display_banner
+    display_moves
+    display_outcome
+    display_scores
+  end
+
+  def add_to_banner(text_line)
+    text_line.center(BANNER_WIDTH)
+  end
+
   def display_moves
     system 'clear'
-    prompt "You chose #{human.move}."
-    prompt "#{computer.name} chose #{computer.move}."
+    puts "┌#{'─' * BANNER_WIDTH}┐"
+    puts "|#{add_to_banner("You chose #{human.move}.")}|"
+    sleep 0.75
+    puts "|#{add_to_banner("Computer chose #{computer.move}.")}|"
+    puts "|#{add_to_banner('---')}|"
   end
 
-  def human_win?
-    human.move > computer.move
-  end
-
-  def computer_win?
-    human.move < computer.move
-  end
-
-  def display_winner
-    if human_win?
-      puts "You won!"
-      human.score += 1
-    elsif computer_win?
-      puts "#{computer.name} won!"
-      computer.score += 1
+  def decide_winner
+    if human.move > computer.move
+      'PLAYER (YOU)!'
+    elsif human.move < computer.move
+      'COMPUTER!'
     else
-      puts "It's a tie!"
+      "IT'S A DRAW!"
     end
   end
 
+  def display_outcome
+    winner = decide_winner
+    sleep 0.5
+    puts "|#{add_to_banner('THE WINNER IS...')}|"
+    sleep 1
+    puts "|#{add_to_banner(winner)}|"
+    puts "|#{add_to_banner('---')}|"
+  end
+
   def display_scores
-    puts "Player Score: #{human.score}"
-    puts "#{computer.name} Score: #{computer.score}"
+    update_score
+    human_score = human.score.to_s
+    computer_score = computer.score.to_s
+    sleep 0.5
+    puts "|#{add_to_banner('Player - Computer')}|"
+    puts "|#{add_to_banner(human_score + (' ' * 10) + computer_score)}|"
+    puts "└#{'─' * BANNER_WIDTH}┘"
+  end
+
+  def update_score
+    if human.move > computer.move
+      human.score += 1
+    elsif human.move < computer.move
+      computer.score += 1
+    end
   end
 
   def play_again?
@@ -165,25 +216,6 @@ class RPSGame
     @move_history << "Player chose #{human.move}."
     @move_history << "#{computer.name} chose #{computer.move}."
     @move_history << "---"
-  end
-
-  def play_moves
-    human.choose
-    computer.choose
-    record_moves
-    self.round_num += 1
-  end
-
-  def play
-    display_welcome_message
-    loop do
-      play_moves
-      display_moves
-      display_winner
-      display_scores
-      break unless play_again? && !grand_winner?
-    end
-    display_goodbye_message
   end
 end
 
@@ -217,13 +249,13 @@ RPSGame.new.play
 # │       0          1        │
 # └───────────────────────────┘
 
-# ^ this is essentially display_moves, display_winner, display scores.
+# ^ this is essentially display_moves, display_outcome, display scores.
 
 # puts 'TIE'
 # puts '---'
 # puts 'GAME!'
 # puts scores
-# puts Player: #{} : 
+# puts Player: #{} :
 
 # <<-CARD
 #     +=====================+
@@ -246,7 +278,6 @@ RPSGame.new.play
 # └──────────────────────┘
 
 # BOARD
-     
 
 # def winning_rock?(move, other_move)
 #     move.value == 'rock' &&

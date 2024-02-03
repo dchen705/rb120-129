@@ -23,11 +23,14 @@ My Vision
       Cycler
       Random Cycler
       Other ideas: Unbeatable or Unlosable
+      Others: Manual Set Probabilities
       
       I want to try and incorporate polymorphism... that is I want to be able to
       create an interface that lets me easily insert different AI types and have the gameplay
       customize depending on the AI insertion. We can even have a roster of AI and have the gameplay
       select a lineup of 3 random AI from the roster.
+      
+      To incorporate AI logic using history, I could set history to a class variable of RPSGame
   
   User friendly graphic interface
     - need a guide interface that shows what beats what 
