@@ -1,0 +1,316 @@
+def prompt(msg)
+  sleep 0.5
+  puts "=> #{msg}"
+end
+
+module Displayable
+  def display_welcome_message
+    system 'clear'
+    prompt "Welcome to Rock, Paper, Scissors, Spock, Lizard!"
+  end
+
+  def display_goodbye_message
+    prompt "Thanks for playing Rock, Paper, Scissors, Spock, Lizard!"
+  end
+end
+
+class Move
+  OPTIONS = {
+    'rock' => { beats: %w(scissors lizard), shortened: 'r', num: '1' },
+    'paper' => { beats: %w(rock spock), shortened: 'p', num: '2' },
+    'scissors' => { beats: %w(paper lizard), shortened: 'sc', num: '3' },
+    'spock' => { beats: %w(rock scissors), shortened: 'sp', num: '4' },
+    'lizard' => { beats: %w(paper spock), shortened: 'l', num: '5' }
+  }
+
+  attr_reader :value
+
+  def initialize(value)
+    @value = value
+  end
+
+  def >(other_move)
+    OPTIONS[value][:beats].include?(other_move.value)
+  end
+
+  def <(other_move)
+    OPTIONS[other_move.value][:beats].include?(value)
+  end
+
+  def to_s
+    value
+  end
+end
+
+class Player
+  attr_accessor :move, :score
+
+  def initialize
+    @score = 0
+  end
+end
+
+class Human < Player
+  def choose
+    choice = nil
+    loop do
+      prompt "Please select from the following:"
+      display_options
+      choice = gets.chomp
+      break if validate_option choice
+      puts "Sorry, invalid choice"
+    end
+    self.move = Move.new(choice)
+  end
+
+  private
+
+  def joinor(move_list)
+    "#{move_list[0..-2].join(', ')} or #{move_list[-1]}"
+  end
+
+  def display_options
+    Move::OPTIONS.each do |name, info|
+      puts "#{info[:num]}) #{name} (#{info[:shortened]})"
+    end
+  end
+
+  def validate_option(choice)
+    Move::OPTIONS.each do |name, info|
+      if [name, info[:shortened], info[:num]].include? choice.downcase
+        return choice.replace(name)
+      end
+    end
+    false
+  end
+end
+
+class Computer < Player
+  attr_accessor :name
+
+  def initialize
+    super
+    self.name = %w(Computer CPU).sample
+  end
+
+  def choose
+    self.move = Move.new(Move::OPTIONS.keys.sample)
+  end
+end
+
+class RPSGame
+  attr_accessor :human, :computer, :round_num, :move_history
+
+  include Displayable
+
+  def initialize
+    @human = Human.new
+    @computer = Computer.new
+    @round_num = 1
+    @move_history = []
+  end
+
+  def display_moves
+    system 'clear'
+    prompt "You chose #{human.move}."
+    prompt "#{computer.name} chose #{computer.move}."
+  end
+
+  def human_win?
+    human.move > computer.move
+  end
+
+  def computer_win?
+    human.move < computer.move
+  end
+
+  def display_winner
+    if human_win?
+      puts "You won!"
+      human.score += 1
+    elsif computer_win?
+      puts "#{computer.name} won!"
+      computer.score += 1
+    else
+      puts "It's a tie!"
+    end
+  end
+
+  def display_scores
+    puts "Player Score: #{human.score}"
+    puts "#{computer.name} Score: #{computer.score}"
+  end
+
+  def play_again?
+    input = ''
+    loop do
+      prompt "Do you want to play again? (y/n) (enter h for move history)"
+      input = gets.chomp
+      if input.start_with?('h')
+        puts move_history
+        next
+      end
+      return true if input.start_with?('y')
+      return false if input.start_with?('n')
+      puts "Sorry, invalid answer."
+    end
+  end
+
+  def grand_winner?
+    human.score == 10 || computer.score == 10
+  end
+
+  def record_moves
+    @move_history << "Round #{round_num}:"
+    @move_history << "Player chose #{human.move}."
+    @move_history << "#{computer.name} chose #{computer.move}."
+    @move_history << "---"
+  end
+
+  def play_moves
+    human.choose
+    computer.choose
+    record_moves
+    self.round_num += 1
+  end
+
+  def play
+    display_welcome_message
+    loop do
+      play_moves
+      display_moves
+      display_winner
+      display_scores
+      break unless play_again? && !grand_winner?
+    end
+    display_goodbye_message
+  end
+end
+
+RPSGame.new.play
+
+# STATIC GUI DRAFT:
+# -----------------
+# puts <<-BOARD
+# ┌#{'─' * DISPLAY_WIDTH}┐
+# │#{'You chose rock.'.center(DISPLAY_WIDTH)}│
+# │#{'Computer chose scissors.'.center(DISPLAY_WIDTH)}│
+# │#{'---'.center(DISPLAY_WIDTH)}│
+# │#{'YOU'.center(DISPLAY_WIDTH)}│
+# │#{'WIN'.center(DISPLAY_WIDTH)}│
+# │#{'---'.center(DISPLAY_WIDTH)}│
+# │#{'Player - Computer'.center(DISPLAY_WIDTH)}│
+# │#{(score1 + ' '* 10 + score2).center(DISPLAY_WIDTH)}│
+# └#{'─' * DISPLAY_WIDTH}┘
+
+# BOARD
+
+# outputs ->
+# ┌───────────────────────────┐
+# │      You chose rock.      │
+# │ Computer chose scissors.  │
+# │            ---            │
+# │            YOU            │
+# │            WIN            │
+# │            ---            │
+# │     Player - Computer     │
+# │       0          1        │
+# └───────────────────────────┘
+
+# ^ this is essentially display_moves, display_winner, display scores.
+
+# puts 'TIE'
+# puts '---'
+# puts 'GAME!'
+# puts scores
+# puts Player: #{} : 
+
+# <<-CARD
+#     +=====================+
+#     |         YOU            |
+#     |         WIN           |
+#     |         ---         |
+#     |    Player - Computer
+#     |     1         0
+#     CARD
+
+# DISPLAY_WIDTH
+
+# puts <<-BOARD
+# ┌──────────────────────┐
+# │                      │
+# │                      │
+# │                      │
+# │                      │
+# │                      │
+# └──────────────────────┘
+
+# BOARD
+     
+
+# def winning_rock?(move, other_move)
+#     move.value == 'rock' &&
+#       (other_move.value == 'scissors' || other_move.value == 'lizard')
+#   end
+
+#   def winning_paper?(move, other_move)
+#     move.value == 'paper' &&
+#       (other_move.value == 'rock' || other_move.value == 'spock')
+#   end
+
+#   def winning_scissors?(move, other_move)
+#     move.value == 'scissors' &&
+#       (other_move.value == 'paper' || other_move.value == 'lizard')
+#   end
+
+#   def winning_spock?(move, other_move)
+#     move.value == 'spock' &&
+#       (other_move.value == 'rock' || other_move.value == 'scissors')
+#   end
+
+#   def winning_lizard?(move, other_move)
+#     move.value == 'lizard' &&
+#       (other_move.value == 'paper' || other_move.value == 'spock')
+#   end
+
+# class Player
+#   attr_accessor :move, :score
+
+#   def initialize
+#     @score = 0
+#   end
+
+#   def joinor(move_list)
+#     "#{move_list[0..-2].join(', ')} or #{move_list[-1]}"
+#   end
+
+#   def move_select(choice)
+#     case choice
+#     when 'rock' then Rock.new
+#     when 'paper' then Paper.new
+#     when 'scissors' then Scissors.new
+#     when 'spock' then Spock.new
+#     when 'lizard' then Lizard.new
+#     end
+#   end
+# end
+
+# class Human < Player
+#   def choose
+#     choice = nil
+#     loop do
+#       puts "Please choose #{joinor(Move::VALUES)}."
+#       choice = gets.chomp
+#       break if Move::VALUES.include? choice
+#       puts "Sorry, invalid choice"
+#     end
+#     self.move = move_select(choice)
+#   end
+# end
+
+# class Computer < Player
+#   def choose
+#     choice = Move::VALUES.sample
+#     self.move = move_select(choice)
+#   end
+# end

@@ -1,6 +1,7 @@
 require 'pry'
 class Move
   VALUES = %w(rock paper scissors spock lizard)
+  attr_reader :value
   def initialize(value)
     @value = value
   end
@@ -76,7 +77,7 @@ class Move
   end
 
   def to_s
-    @value
+    value
   end
 end
 
