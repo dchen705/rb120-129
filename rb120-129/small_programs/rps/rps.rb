@@ -55,7 +55,7 @@ def start_game
   display_welcome_message
   case menu_select
   when '1' then ClassicMode.new.play
-  when '2' then ClassicMode.new.play
+  when '2' then BossRushMode.new.play
   end
 end
 
@@ -99,7 +99,7 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      prompt "Please select from the following:"
+      prompt "Make your move from the following:"
       display_options
       choice = gets.chomp
       break if get_valid_option choice
@@ -136,15 +136,18 @@ class Human < Player
 end
 
 class Computer < Player
-  attr_accessor :name
-
-  def initialize
-    super
-    self.name = %w(Computer CPU).sample
-  end
-
   def choose
     self.move = Move.new(Move::OPTIONS.keys.sample)
+  end
+end
+
+class Mimic < Player
+  def choose(player_history = [])
+    if player_history.empty?
+      self.move = Move.new(Move::OPTIONS.keys.sample)
+    else
+      self.move = Move.new(player_history.last)
+    end
   end
 end
 
@@ -154,13 +157,110 @@ class ClassicMode
   def initialize
     @human = Human.new
     @computer = Computer.new
-    @round_num = 1
-    @move_history = []
   end
 
   def play
     system 'clear'
     prompt "Welcome to Classic Mode!"
+    loop do
+      play_moves
+      display_banner
+      break unless play_again?
+    end
+    display_goodbye_message
+  end
+
+  private
+
+  attr_accessor :human, :computer
+
+  def play_moves
+    human.choose
+    computer.choose
+  end
+
+  def display_banner
+    display_moves
+    display_outcome
+    display_scores
+  end
+
+  def add_to_banner(text_line)
+    text_line.center(BANNER_WIDTH)
+  end
+
+  def display_moves
+    system 'clear'
+    puts "┌#{'─' * BANNER_WIDTH}┐"
+    puts "|#{add_to_banner("You chose #{human.move}.")}|"
+    sleep 0.75
+    puts "|#{add_to_banner("Computer chose #{computer.move}.")}|"
+    puts "|#{add_to_banner('---')}|"
+  end
+
+  def decide_winner
+    if human.move > computer.move
+      'PLAYER (YOU)!'
+    elsif human.move < computer.move
+      'COMPUTER!'
+    else
+      "IT'S A DRAW!"
+    end
+  end
+
+  def display_outcome
+    winner = decide_winner
+    sleep 0.5
+    puts "|#{add_to_banner('THE WINNER IS...')}|"
+    sleep 1
+    puts "|#{add_to_banner(winner)}|"
+    puts "|#{add_to_banner('---')}|"
+  end
+
+  def display_scores
+    update_score
+    human_score = human.score.to_s
+    computer_score = computer.score.to_s
+    sleep 0.5
+    puts "|#{add_to_banner('Player - Computer')}|"
+    puts "|#{add_to_banner(human_score + (' ' * 10) + computer_score)}|"
+    puts "└#{'─' * BANNER_WIDTH}┘"
+  end
+
+  def update_score
+    if human.move > computer.move
+      human.score += 1
+    elsif human.move < computer.move
+      computer.score += 1
+    end
+  end
+
+  def play_again?
+    input = ''
+    loop do
+      prompt "Do you want to play again? (y/n)"
+      input = gets.chomp
+      return true if input.start_with?('y')
+      return false if input.start_with?('n')
+      puts "Sorry, invalid answer."
+    end
+  end
+end
+
+class BossRushMode
+  BANNER_WIDTH = 27
+
+  def initialize
+    @human = Human.new
+    @computer = Mimic.new
+    @player_history = []
+    @consq_wins = 0
+    @boss_lvl = 1
+  end
+
+  def play
+    system 'clear'
+    prompt "Welcome to Boss Rush Mode!"
     loop do
       play_moves
       display_banner
@@ -171,13 +271,12 @@ class ClassicMode
 
   private
 
-  attr_accessor :human, :computer, :round_num, :move_history
+  attr_accessor :human, :computer, :round_num, :player_history
 
   def play_moves
     human.choose
-    computer.choose
-    record_moves
-    self.round_num += 1
+    computer.choose(player_history)
+    record_player_move
   end
 
   def display_banner
@@ -242,7 +341,7 @@ class ClassicMode
       prompt "Do you want to play again? (y/n) (enter h for move history)"
       input = gets.chomp
       if input.start_with?('h')
-        puts move_history
+        puts player_history
         next
       end
       return true if input.start_with?('y')
@@ -255,11 +354,8 @@ class ClassicMode
     human.score == 10 || computer.score == 10
   end
 
-  def record_moves
-    @move_history << "Round #{round_num}:"
-    @move_history << "Player chose #{human.move}."
-    @move_history << "#{computer.name} chose #{computer.move}."
-    @move_history << "---"
+  def record_player_move
+    @player_history << human.move.value
   end
 end
 
