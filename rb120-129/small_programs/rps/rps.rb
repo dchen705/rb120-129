@@ -3,14 +3,59 @@ def prompt(msg)
   puts "=> #{msg}"
 end
 
-module Displayable
-  def display_welcome_message
-    system 'clear'
-    prompt "Welcome to Rock, Paper, Scissors, Spock, Lizard!"
-  end
+def display_welcome_message
+  system 'clear'
+  puts "=== Welcome to Rock, Paper, Scissors, Spock, Lizard! ==="
+end
 
-  def display_goodbye_message
-    prompt "Thanks for playing Rock, Paper, Scissors, Spock, Lizard!"
+def display_goodbye_message
+  prompt "Thanks for playing Rock, Paper, Scissors, Spock, Lizard!"
+end
+
+def menu_select
+  loop do
+    puts "Select a game mode: (press enter to see how-to-play)"
+    puts "(1) Classic Mode"
+    puts "(2) Boss Rush Mode"
+    input = gets.chomp
+    return input if input == '1' || input == '2'
+    display_info
+  end
+end
+
+# rubocop:disable Metrics/MethodLength
+def display_info
+  system 'clear'
+  puts <<-RULES
+Classic Mode: Play against a normal CPU and win by best-of.
+
+Boss Rush Mode: Face off against 3 CPU, defeat each by figuring
+out their attack pattern and winning three moves in a row.
+
+---
+You probably know...
+Rock beats scissors, paper beats rock, scissors beats paper.
+
+But...
+Rock and scissors also beat lizard. Paper also beats spock.
+
+And...
+Spock beats rock and scissors.
+Lizard beats paper and spock.
+
+---
+Press any key to exit.
+  RULES
+  gets
+  system 'clear'
+end
+# rubocop:enable Metrics/MethodLength
+
+def start_game
+  display_welcome_message
+  case menu_select
+  when '1' then ClassicMode.new.play
+  when '2' then ClassicMode.new.play
   end
 end
 
@@ -103,10 +148,8 @@ class Computer < Player
   end
 end
 
-class RPSGame
+class ClassicMode
   BANNER_WIDTH = 27
-
-  include Displayable
 
   def initialize
     @human = Human.new
@@ -116,7 +159,8 @@ class RPSGame
   end
 
   def play
-    display_welcome_message
+    system 'clear'
+    prompt "Welcome to Classic Mode!"
     loop do
       play_moves
       display_banner
@@ -219,7 +263,7 @@ class RPSGame
   end
 end
 
-RPSGame.new.play
+start_game
 
 # STATIC GUI DRAFT:
 # -----------------
