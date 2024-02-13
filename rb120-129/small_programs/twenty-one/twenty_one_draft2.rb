@@ -1,3 +1,5 @@
+# 1 hour of work - 2/12/24
+
 module Displayable
   def display_welcome_message
     puts "Welcome to Twenty-One game"
@@ -30,10 +32,11 @@ class Card
   RANKS = %w(A 2 3 4 5 6 7 8 9 10 J Q K)
   SUITS = %w(♦ ♣ ♥ ♠)
 
+  attr_reader :rank, :suit
+
   def initialize(rank, suit)
       @rank = rank
       @suit = suit
-      @reveal_status = false
   end
 end
 
@@ -56,6 +59,25 @@ class Hand
 
   def adjust_ace_value
 
+  end
+
+  def show_one_card
+    shown_card = "#{cards.first.rank} of #{cards.first.suit}"
+    "#{shown_card}, #{hidden_cards}"
+  end
+
+  private
+
+  def to_s
+    cards.map do |card|
+      "#{card.rank} of #{card.suit}"
+    end.join(', ')
+  end
+
+  def hidden_cards
+    cards[1..-1].map do |card|
+      "? of ?"
+    end.join(', ')
   end
 end
 
@@ -98,18 +120,22 @@ class Game_21
     end
   end
 
+  def display_hands
+    puts "Player Hand: #{player.hand}"
+    puts "Dealer Hand: #{dealer.hand.show_one_card}"
+  end
+
   def play
     display_welcome_message
     deal
-    puts player.hand.inspect
-    puts dealer.hand.inspect
+    display_hands
     puts @deck.size
   end
 
   private
 
   attr_reader :player, :dealer, :deck
-  # deal
+
   # player_turn
   #     break if bust? || stay
   # dealer_turn
