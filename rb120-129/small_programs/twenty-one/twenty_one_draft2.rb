@@ -1,5 +1,10 @@
 # 1 hour of work - 2/12/24
-# 1 - 2/13/24
+# 2 - 2/13/24
+def clear
+  system 'clear'
+  sleep 0.5
+end
+
 module Displayable
   def display_welcome_message
     puts "Welcome to Twenty-One game"
@@ -17,14 +22,6 @@ class Participant
 
   def draw(deck)
     hand << deck.pop
-  end
-
-  def hit
-
-  end
-
-  def stay
-
   end
 
   def bust?
@@ -143,21 +140,37 @@ class Game_21
     display_hands
   end
 
-  def display_hands
+  def display_hands(reveal_dealers: false)
     puts "Player Hand: #{player.hand}"
-    puts "Dealer Hand: #{dealer.hand.show_one_card}"
+    dealers_hand = reveal_dealers ? dealer.hand : dealer.hand.show_one_card
+    puts "Dealer Hand: #{dealers_hand}"
   end
 
   def player_turn
     loop do
       case prompt_hit_stay
       when 'h'
+        puts "You hit!"
         player.draw(deck)
         display_hands
         break if player.bust?
-      when 's' then break
+      when 's'
+        puts "You decided to stay."
+        break
       end
     end
+  end
+
+  def dealer_turn
+    puts "Dealer's turn..."
+    until dealer.hand.total_value >= 17
+      dealer.draw(deck)
+      clear
+      display_hands
+      puts "Dealer decided to hit."
+      sleep 0.5
+    end
+    puts "Dealer decided to stay." unless dealer.bust?
   end
 
   def play
@@ -165,6 +178,7 @@ class Game_21
     deal
     player_turn
     dealer_turn unless player.bust?
+    puts display_hands(reveal_dealers: true)
     puts @deck.size
   end
 
