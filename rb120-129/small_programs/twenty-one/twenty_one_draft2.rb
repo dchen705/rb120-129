@@ -1,5 +1,5 @@
 # 1 hour of work - 2/12/24
-
+# 1 - 2/13/24
 module Displayable
   def display_welcome_message
     puts "Welcome to Twenty-One game"
@@ -25,6 +25,10 @@ class Participant
 
   def stay
 
+  end
+
+  def bust?
+    hand.total_value > 21
   end
 end
 
@@ -53,12 +57,18 @@ class Hand
   end
 
   def total_value
-      sum
-      adjust_ace_value
+      hand_values = get_hand_values
+      adjust_ace_value(hand_values.sum)
   end
 
-  def adjust_ace_value
-
+  def adjust_ace_value(hand_sum)
+    ace_count = cards.count do |card|
+      card.rank == 'A'
+    end
+    ace_count.times do
+      hand_sum -= 10 if hand_sum > 21
+    end
+    hand_sum
   end
 
   def show_one_card
@@ -78,6 +88,18 @@ class Hand
     cards[1..-1].map do |card|
       "? of ?"
     end.join(', ')
+  end
+
+  def get_hand_values
+    cards.map do |card|
+      if %w(J Q K).include?(card.rank)
+        10
+      elsif card.rank == 'A'
+        11
+      else
+        card.rank.to_i
+      end
+    end
   end
 end
 
@@ -118,6 +140,7 @@ class Game_21
       player.draw(deck)
       dealer.draw(deck)
     end
+    display_hands
   end
 
   def display_hands
@@ -125,16 +148,38 @@ class Game_21
     puts "Dealer Hand: #{dealer.hand.show_one_card}"
   end
 
+  def player_turn
+    loop do
+      case prompt_hit_stay
+      when 'h'
+        player.draw(deck)
+        display_hands
+        break if player.bust?
+      when 's' then break
+      end
+    end
+  end
+
   def play
     display_welcome_message
     deal
-    display_hands
+    player_turn
+    dealer_turn unless player.bust?
     puts @deck.size
   end
 
   private
 
   attr_reader :player, :dealer, :deck
+
+  def prompt_hit_stay
+    loop do
+      puts "Would you like to (h)it or (s)tay?"
+      input = gets.chomp[0].downcase
+      return input if %(h s).include?(input)
+      puts "Please enter h or s."
+    end
+  end
 
   # player_turn
   #     break if bust? || stay
