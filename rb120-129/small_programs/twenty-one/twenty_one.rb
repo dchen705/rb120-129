@@ -1,3 +1,4 @@
+# 45+30 - 2/14/24
 def clear
   system 'clear'
   sleep 0.5
@@ -24,8 +25,8 @@ class Participant
   attr_accessor :hand
 
   def initialize(type)
-      @type = type
-      @hand = Hand.new
+    @type = type
+    @hand = Hand.new
   end
 
   def draw(deck)
@@ -44,26 +45,25 @@ class Card
   attr_reader :rank, :suit
 
   def initialize(rank, suit)
-      @rank = rank
-      @suit = suit
+    @rank = rank
+    @suit = suit
   end
 end
 
 class Hand
-
   attr_reader :cards
 
   def initialize
-      @cards = [] # array of Card objects
+    @cards = [] # array of Card objects
   end
 
   def <<(card)
-      cards << card
+    cards << card
   end
 
   def total_value
-      hand_values = get_hand_values
-      adjust_ace_value(hand_values.sum)
+    hand_values = convert_to_hand_values
+    adjust_ace_value(hand_values.sum)
   end
 
   def adjust_ace_value(hand_sum)
@@ -90,12 +90,12 @@ class Hand
   end
 
   def hidden_cards
-    cards[1..-1].map do |card|
+    cards[1..-1].map do
       "? of ?"
     end.join(', ')
   end
 
-  def get_hand_values
+  def convert_to_hand_values
     cards.map do |card|
       if %w(J Q K).include?(card.rank)
         10
@@ -108,7 +108,7 @@ class Hand
   end
 end
 
-class Game_21
+class TwentyOne
   include Displayable
 
   def initialize
@@ -168,13 +168,17 @@ class Game_21
     end
   end
 
+  def player_hit
+    prompt "You hit!"
+    player.draw(deck)
+    display_hands
+  end
+
   def player_turn
     loop do
       case prompt_hit_stay
       when 'h'
-        prompt "You hit!"
-        player.draw(deck)
-        display_hands
+        player_hit
         break if player.bust?
       when 's'
         prompt "You decided to stay."
@@ -188,7 +192,6 @@ class Game_21
     until dealer.hand.total_value >= 17
       dealer.draw(deck)
       prompt "Dealer decided to hit."
-      display_hands
     end
     prompt "Dealer decided to stay." unless dealer.bust?
   end
@@ -209,12 +212,13 @@ class Game_21
     else
       display_winner
     end
-    puts "Player total: #{player.hand.total_value} - Dealer total #{dealer.hand.total_value}"
+    puts "\nPlayer total: #{player.hand.total_value}\n" \
+         "Dealer total #{dealer.hand.total_value}"
     puts display_hands(reveal_dealers: true)
   end
 
   def reset
-    deck = new_deck
+    self.deck = new_deck
     player.hand = Hand.new
     dealer.hand = Hand.new
     clear
@@ -224,7 +228,7 @@ class Game_21
     input = ''
     loop do
       prompt "Would you like to play again? (y/n)"
-      input = gets.chomp[0].downcase
+      input = gets.chomp.downcase[0]
       break if %w(y n).include?(input)
       prompt "Sorry, that's not valid."
     end
@@ -233,4 +237,4 @@ class Game_21
   end
 end
 
-Game_21.new.play
+TwentyOne.new.play
