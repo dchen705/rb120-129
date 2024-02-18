@@ -1,4 +1,4 @@
-# 45+30 - 2/14/24
+# 45+30+15 - 2/14/24
 def clear
   system 'clear'
   sleep 0.5
